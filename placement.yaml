@@ -1,0 +1,42 @@
+play_motion:
+  controllers: [arm_controller, head_controller, torso_controller, gripper_controller]
+  motions:
+    stretch:
+      joints: ['torso_lift_joint', 'arm_1_joint', 'arm_2_joint', 'arm_3_joint', 'arm_4_joint', 'arm_5_joint', 'arm_6_joint', 'arm_7_joint']
+      points:
+      - positions: [0.347, 0.20, -1.34, -0.20, 1.94, -1.57, 1.37, 0.0]
+        time_from_start: 5.0
+      meta:
+        name: stretch
+        usage: erl
+        description: 'Raise torso, with arm in home position to ensure safe unfolding of arm.'
+
+    idle_pos:
+      joints: ['torso_lift_joint','arm_1_joint', 'arm_2_joint', 'arm_3_joint', 'arm_4_joint', 'arm_5_joint', 'arm_6_joint', 'arm_7_joint', 'head_1_joint', 'head_2_joint']
+      points:
+      - positions: [0.30, 0.38, 0.26, 0.03, 0.87, -1.57, 0.75, -0.05, 0.00, -0.97]
+        time_from_start: 3.0
+      meta:
+        name: idle_pos
+        usage: erl
+        description: 'Move arm into correct position for waiting and set head down.'
+
+    over_pos:
+      joints: ['torso_lift_joint', 'arm_1_joint', 'arm_2_joint', 'arm_3_joint', 'arm_4_joint', 'arm_5_joint', 'arm_6_joint', 'arm_7_joint']
+      points:
+      - positions: [0.30, 1.59, -0.07, -0.01, 0.72, -1.57, 0.75, -0.05]
+        time_from_start: 2.0
+      meta:
+        name: over_pos
+        usage: erl
+        description: 'Move arm over the grab location'
+
+    grab_pos:
+      joints: ['torso_lift_joint', 'arm_1_joint', 'arm_2_joint', 'arm_3_joint', 'arm_4_joint', 'arm_5_joint', 'arm_6_joint', 'arm_7_joint']
+      points:
+      - positions: [0.10, 1.59, -0.07, -0.01, 0.72, -1.57, 0.75, -0.05]
+        time_from_start: 2.0
+      meta:
+        name: grab_pos
+        usage: erl
+        description: 'Sink torso down to grab object.'
