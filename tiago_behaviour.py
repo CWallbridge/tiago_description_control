@@ -6,6 +6,7 @@ from nav_msgs.msg import Path
 from std_msgs.msg import String
 from std_msgs.msg import Empty
 from time import sleep
+from datetime import datetime
 import rospy
 import tf
 import motion
@@ -16,6 +17,7 @@ import time
 import sys
 import os
 import pyttsx
+import csv
 
 import underworlds
 import underworlds.server
@@ -51,6 +53,7 @@ cur_obj_id = ""
 d_rel_list = []
 iteration = 0
 full_desc = ""
+logpath = ""
 
 tts = pyttsx.init()
 #tts.say('Good morning.')
@@ -129,8 +132,6 @@ def load_mlp_classifier(filename):
         
     return clf
     
-    
-
 def set_condition(message):
     global order
     global cond1
@@ -151,19 +152,23 @@ def na_description(cur_map, targ):
     targetpose.header.frame_id = str(cur_map + 1) + "_" + str(targ + 1) + "_target"
     targetpose.header.stamp = rospy.Time(0)
     
-    vct_val = 90 + random.randint(0,20)
-    msg = "\VCT=" + str(vct_val) + "\ " + msg 
+    #vct_val = 90 + random.randint(0,20)
+    #msg = "\VCT=" + str(vct_val) + "\ " + msg 
     
     look_at(targetpose)
     
-    pub_rob_start.publish()
-    pub_rob_desc.publish(str(msg) + " - " + str(rospy.Time.now()))
-    say_id = textSpchProxy.post.say(msg)
-    textSpchProxy.wait(say_id, 0)
+    #pub_rob_start.publish()
+    #pub_rob_desc.publish(str(msg) + " - " + str(rospy.Time.now()))
+    #say_id = textSpchProxy.post.say(msg)
+    write_log("Tiago Starts Speaking")
+    write_log(msg)
+    tts.say(msg)
+    tts.runAndWait()
+    write_log("Tiago Stops Speaking")
     
-    pub_rob_end.publish()
+    #pub_rob_end.publish()
     
-    trackerProxy.lookAt([1,0,0.6], 0, .1,False)
+    #trackerProxy.lookAt([1,0,0.6], 0, .1,False)
     
     return rospy.Time.now()
    
@@ -208,6 +213,41 @@ def d_description(node_id, decision, location):
     #state = "d_describe"
     
     return desc
+
+def create_log():
+    
+    global logpath
+    global start_log_time
+    
+    if not os.path.exists('log'):
+        os.makedirs('log')
+        
+    logpath = os.path.join('log',str(datetime.now().strftime('%Y-%m-%d-%H-%M-%S')))
+    os.makedirs(logpath)
+    
+    start_log_time = rospy.Time.now()
+    
+    write_log('Start')
+
+def write_log(log)
+
+    global logpath
+    global start_log_time
+
+    csvpath = os.path.join(logpath, 'log.csv')
+    with open(csvpath, 'a') as csvfile:
+        logwriter = csv.writer(csvfile)
+        logwriter.writerow([rospy.Time.now() - start_log_time, log])
+        
+def write_position_log(x,y,yaw,targ_x,targ_y)
+
+    global logpath
+    global start_log_time
+    
+    csvpath = os.path.join(logpath, 'position_log.csv')
+    with open(csvpath, 'a') as csvfile:
+        logwriter = csv.writer(csvfile)
+        logwriter.writerow([rospy.Time.now() - start_log_time, x, y, yaw, targ_x, targ_y])
     
 def command(message):
     
@@ -222,34 +262,37 @@ def command(message):
     global prev_state
     
     try:
-        textSpchProxy.stopAll()
+        tts.stop()
     except Exception as e:
         print e
     
     if message.data == "tutorial":
         
-        trackerProxy.lookAt([1,0,0.6], 0, .1,False)
-        trackerProxy.registerTarget("Face",.2)
-        trackerProxy.track("Face")
+        state = "wait"
     
         msg = "Hello. "
-        msg = msg + "I am Pico, today we are going to play a game together. \pau=500\ "
-        msg = msg + "In a moment we are going to see the map of a city. \pau=500\ "
-        msg = msg + "However some of the buildings from the city are missing. \pau=500\ "
-        msg = msg + "You will see some buildings pop up with a red border, you can move them around by touching and dragging the object on the screen. \pau=500\ "
-        msg = msg + "I will be describing where the empty spaces are that these buildings should go in. \pau=500\ "
-        msg = msg + "In front of you right now you can see the names I will be using to describe the buildings that need to be moved, and that are already in position. \pau=500\ "
-        msg = msg + "A church, a commercial district, a factory, a fire department, a hospital, a manor, a police department, a power plant, and a residence. \pau=500\ "
+        msg = msg + "I am Tiago, today we have an important job. "
+        msg = msg + "You should be able to see me in a room with some barrels through the security cameras. "
+        msg = msg + "Some of these barrels are emmitting different types of radiation. "
+        msg = msg + "We need to sort them for safe disposal. I am able to identify the radioactive barrels. "
+        msg = msg + "But I will need you to guide me to the locations I describe using the arrow keys on your keyboard. "
+        msg = msg + "Once I am in position you can command me to move my arm into the grab position, and then activate the electomagnet to pick up the barrel. "
+        msg = msg + "We will then need to bring it back to the starting point for later disposal. "
         msg = msg + "Let's get started!"
 
-        msg = "\RSPD=90\ \VCT=100\ " + msg
+        #msg = "\RSPD=90\ \VCT=100\ " + msg
 
-        say_id = textSpchProxy.post.say(msg)
-        textSpchProxy.wait(say_id, 0)
+        tts.say(msg)
+        tts.runAndWait()
         
-        pub_start_placement1.publish()
+        create_log()
         
-    elif message.data == "placement1":
+        #pub_start_placement1.publish()
+        
+    #elif message.data == "placement1":
+        
+        write_log("Condition: %s-%s" % (cond1, cond2))
+        write_log("Start First Map")
         
         cur_map = int(order)
         cur_targ_frame = str(cur_map + 1) + "_" + str(cur_targ + 1) + "_target"
@@ -257,14 +300,18 @@ def command(message):
     
         if cond1 == "D":
             state = "d_describe"
-        else:
+        elif cond1 == "N":
             state = "na_describe"
+        else:
+            state = "record"
     
     elif message.data == "placement2":
         
-        trackerProxy.lookAt([1,0,0.6], 0, .1,False)
-        trackerProxy.registerTarget("Face",.2)
-        trackerProxy.track("Face")
+        #trackerProxy.lookAt([1,0,0.6], 0, .1,False)
+        #trackerProxy.registerTarget("Face",.2)
+        #trackerProxy.track("Face")
+        
+        write_log("Start Second Map")
         
         cur_map = 1 - int(order)
         cur_targ_frame = str(cur_map + 1) + "_" + str(cur_targ + 1) + "_target"
@@ -272,12 +319,15 @@ def command(message):
             
         if cond2 == "D":
             state = "d_describe"
-        else:
+        elif cond2 == "N":
             state = "na_describe"
+        else:
+            state = "record"
             
     elif message.data == "success":
         
-        state = "success"
+        write_log("Item placed")
+        state = "wait"
         
         cur_targ = cur_targ + 1
         cur_targ_frame = str(cur_map + 1) + "_" + str(cur_targ + 1) + "_target"
@@ -285,33 +335,35 @@ def command(message):
         congrat = ["Well done! ", "Good job! ", "Excellent! "]
         msg = random.choice(congrat)
         
-        if cur_targ < 7:
+        if cur_targ < 6:
             chatter = [" ", "Let's do the next one.", "Onto the next one.", "Let's keep going.", "Ok, now for the next one"]
             msg = msg + random.choice(chatter)
         
-        vct_val = 90 + random.randint(0,20)
-        msg = "\VCT=" + str(vct_val) + "\ " + msg 
+        #vct_val = 90 + random.randint(0,20)
+        #msg = "\VCT=" + str(vct_val) + "\ " + msg 
         
-        say_id = textSpchProxy.post.say(msg)
-        textSpchProxy.wait(say_id, 0)
+        tts.say(msg)
+        tts.runAndWait()
         
-        if cur_targ < 7:
+        if cur_targ < 6:
             state = prev_state
             new_desc = True
         else:
-            state = "idle"
+            state = "wait"
             cur_targ = 0
         
         #print cur_targ_frame
         
     elif message.data == "wait":
         
+        write_log("Item picked up")
         chatter = ["Good let's bring that one back.", "Nice work, now we need to bring it back to the start point.", "Ok we got it, bring the barrel back to the corner!"]
         prev_state = state
         state = "wait"
     
     elif message.data == "resume":
         
+        write_log("Returnin to description")
         state = prev_state
     
     else:
@@ -319,7 +371,8 @@ def command(message):
         if int(order) == 0 or int(order) == 1:
             set_condition(message)
         else:
-            textSpchProxy.post.say("I am afraid I can't do that Dave")
+            tts.say("I am afraid I can't do that Dave")
+            tts.runAndWait()
 
 if __name__ == "__main__":
     global state
@@ -348,11 +401,11 @@ if __name__ == "__main__":
 
     sub_placement_start = rospy.Subscriber("tiago/place_desc/command", String, command, queue_size=1)
 
-    pub_speech = rospy.Publisher("/speech", String, queue_size=5)
-    pub_start_placement1 = rospy.Publisher("/sandtray/signals/start_placement1", Empty, queue_size=1)
-    pub_rob_start = rospy.Publisher("/sandtray/signals/rob_speech_start", Empty, queue_size=1)
-    pub_rob_end = rospy.Publisher("/sandtray/signals/rob_speech_end", Empty, queue_size=1)
-    pub_rob_desc = rospy.Publisher("sandtray/signals/rob_speech_desc", String, queue_size=5)
+    #pub_speech = rospy.Publisher("/speech", String, queue_size=5)
+    #pub_start_placement1 = rospy.Publisher("/sandtray/signals/start_placement1", Empty, queue_size=1)
+    #pub_rob_start = rospy.Publisher("/sandtray/signals/rob_speech_start", Empty, queue_size=1)
+    #pub_rob_end = rospy.Publisher("/sandtray/signals/rob_speech_end", Empty, queue_size=1)
+    #pub_rob_desc = rospy.Publisher("sandtray/signals/rob_speech_desc", String, queue_size=5)
 
     state = "wait"
     
@@ -372,30 +425,28 @@ if __name__ == "__main__":
     target[0][3] = world1.scene.nodebyname("commercial_district-1")[0].id
     target[0][4] = world1.scene.nodebyname("police_department")[0].id
     target[0][5] = world1.scene.nodebyname("police_department-1")[0].id
-    target[0][6] = world1.scene.nodebyname("church-2")[0].id
     target[1][0] = world2.scene.nodebyname("hospital-1")[0].id
     target[1][1] = world2.scene.nodebyname("hospital-2")[0].id
     target[1][2] = world2.scene.nodebyname("residence-6")[0].id
     target[1][3] = world2.scene.nodebyname("hospital")[0].id
     target[1][4] = world2.scene.nodebyname("residence-17")[0].id
     target[1][5] = world2.scene.nodebyname("manor-1")[0].id
-    target[1][6] = world2.scene.nodebyname("power_plant")[0].id
     
-    obj_frame_id[0].append("1_1_residential")
-    obj_frame_id[0].append("1_2_manor")
-    obj_frame_id[0].append("1_3_residential")
-    obj_frame_id[0].append("1_4_commercial")
-    obj_frame_id[0].append("1_5_police")
-    obj_frame_id[0].append("1_6_police")
-    obj_frame_id[0].append("1_7_church")
-    obj_frame_id.append([])
-    obj_frame_id[1].append("2_1_hospital")
-    obj_frame_id[1].append("2_2_hospital")
-    obj_frame_id[1].append("2_3_residential")
-    obj_frame_id[1].append("2_4_hospital")
-    obj_frame_id[1].append("2_5_residential")
-    obj_frame_id[1].append("2_6_manor")
-    obj_frame_id[1].append("2_7_power")
+    #obj_frame_id[0].append("1_1_residential")
+    #obj_frame_id[0].append("1_2_manor")
+    #obj_frame_id[0].append("1_3_residential")
+    #obj_frame_id[0].append("1_4_commercial")
+    #obj_frame_id[0].append("1_5_police")
+    #obj_frame_id[0].append("1_6_police")
+    #obj_frame_id[0].append("1_7_church")
+    #obj_frame_id.append([])
+    #obj_frame_id[1].append("2_1_hospital")
+    #obj_frame_id[1].append("2_2_hospital")
+    #obj_frame_id[1].append("2_3_residential")
+    #obj_frame_id[1].append("2_4_hospital")
+    #obj_frame_id[1].append("2_5_residential")
+    #obj_frame_id[1].append("2_6_manor")
+    #obj_frame_id[1].append("2_7_power")
     
     for node in world1.scene.nodes:
         format_name("map1", node.id)
@@ -435,7 +486,7 @@ if __name__ == "__main__":
 
     tl = tf.TransformListener()
 
-    r = rospy.Rate(10)
+    r = rospy.Rate(20)
     
     decision_list = []
     
@@ -463,10 +514,10 @@ if __name__ == "__main__":
                 
                 try:
                     (trans, rot) = tl.lookupTransform(cur_targ_frame, '/sandtray', rospy.Time(0))
-                    #Convert for classifier
-                    target_x = trans[0] * -15
-                    target_y = trans[1] * -15
-                    target_z = trans[2] * 15
+                    
+                    target_x = trans[0]
+                    target_y = trans[1]
+                    target_z = trans[2]
                     
                     targ_found = True
                     
@@ -481,10 +532,10 @@ if __name__ == "__main__":
             try:
 
                 (trans, rot) = tl.lookupTransform(obj_frame_id[cur_map][cur_targ], '/sandtray', rospy.Time(0))
-                #Convert for classifier
-                cur_x = trans[0] * -15
-                cur_y = trans[1] * -15
-                cur_z = trans[2] * 15
+
+                cur_x = trans[0]
+                cur_y = trans[1]
+                cur_z = trans[2]
                 
                 x_vec = cur_x - prev_x
                 y_vec = cur_y - prev_y
@@ -532,7 +583,7 @@ if __name__ == "__main__":
                 
                 decision_list.append(int(decision[0]))
                 
-                if len(decision_list) > 5:
+                if len(decision_list) > 10:
                     decision_list.pop(0)
                 
                 #print decision
@@ -573,19 +624,22 @@ if __name__ == "__main__":
     
                         look_at(targetpose)
                         
-                        vct_val = 90 + random.randint(0,20)
-                        msg = "\VCT=" + str(vct_val) + "\ " + d_desc 
+                        #vct_val = 90 + random.randint(0,20)
+                        #msg = "\VCT=" + str(vct_val) + "\ " + d_desc 
                         
-                        pub_rob_start.publish()
-                        pub_rob_desc.publish(str(msg) + " - " + str(rospy.Time.now()))
-                        say_id = textSpchProxy.post.say(str(msg))
-                        textSpchProxy.wait(say_id, 0)
+                        #pub_rob_start.publish()
+                        #pub_rob_desc.publish(str(msg) + " - " + str(rospy.Time.now()))
+                        write_log("Tiago Starts Speaking")
+                        write_log(msg)
+                        tts.say(msg)
+                        tts.runAndWait()
+                        write_log("Tiago Stops Speaking")
                         
-                        pub_rob_end.publish()
+                        #pub_rob_end.publish()
                         
                         prev_desc = d_desc
                         
-                        trackerProxy.lookAt([1,0,0.6], 0, .1,False)
+                        #trackerProxy.lookAt([1,0,0.6], 0, .1,False)
                         
                         last_desc = rospy.Time.now()
                         
@@ -593,8 +647,8 @@ if __name__ == "__main__":
                     pass
         
             
-        elif state == "wait":
-            pass
+        if state != "wait":
+            write_position_log(cur_x, cur_y, cur_yaw, target_x, target_y)
         else:
             pass
 
