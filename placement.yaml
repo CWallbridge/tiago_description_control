@@ -34,7 +34,7 @@ play_motion:
     grab_pos:
       joints: ['torso_lift_joint', 'arm_1_joint', 'arm_2_joint', 'arm_3_joint', 'arm_4_joint', 'arm_5_joint', 'arm_6_joint', 'arm_7_joint']
       points:
-      - positions: [0.10, 1.59, -0.07, -0.01, 0.72, -1.57, 0.75, -0.05]
+      - positions: [0.0, 1.59, -0.07, -0.01, 0.72, -1.57, 0.75, -0.05]
         time_from_start: 2.0
       meta:
         name: grab_pos
