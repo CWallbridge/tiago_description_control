@@ -243,6 +243,8 @@ class SimpleKeyTeleop():
         self._move_arm('stretch')
         self._move_arm('unfold_arm')
         self._move_arm('idle_pos')
+        
+        self._state = 'drive'
 
     movement_bindings = {
         curses.KEY_UP:    ( 1,  0),
@@ -345,19 +347,31 @@ class SimpleKeyTeleop():
             self._move_arm('home')
             self._running = False
             rospy.signal_shutdown('Bye')
-        if keycode == ord('g'):
-            self._move_arm('over_pos')
-            self._move_arm('grab_pos')
-            self._move_arm('over_pos')
-            self._move_arm('idle_pos')
-            
-        elif keycode in self.movement_bindings:
-            self._last_pressed[keycode] = rospy.get_time()
+        
+        if self._state == 'drive':
+			if keycode == ord('g'):
+				self._move_arm('over_pos')
+				self._move_arm('grab_pos')
+				#self._move_arm('over_pos')
+				#self._move_arm('idle_pos')
+				self._state = 'grab'
+				
+			elif keycode in self.movement_bindings:
+				self._last_pressed[keycode] = rospy.get_time()
+				
+		if self._state == 'grab':
+			if keycode == ord('g'):
+				self._move_arm('over_pos')
+				self._move_arm('idle_pos')
+				self._state = 'drive'
 
     def _publish(self):
         self._interface.clear()
         self._interface.write_line(2, 'Linear: %f, Angular: %f' % (self._linear, self._angular))
-        self._interface.write_line(5, 'Use arrow keys to move, g to grab, q to exit.')
+        if self._state == 'drive':
+			self._interface.write_line(5, 'Use arrow keys to move, g to go to grab position, q to exit.')
+		if self._state == 'grab':
+			self._interface.write_line(5, 'Press g to leave grab position and resume driving, q to exit.')
         self._interface.refresh()
 
         twist = self._get_twist(self._linear, self._angular)
