@@ -1,0 +1,5 @@
+<launch>
+    <node name="static_localisation_tiago_to_vive" pkg="tf" type="static_transform_publisher" args="0.0 -0.037 -0.075 0 -1.57 1.57 xtion_optical_frame vive_tracker 10"/>
+    <node name="static_localisation_footprint_to_grab" pkg="tf" type="static_transform_publisher" args="0.758 0.044 0.453 0 0 0 base_footprint grab_pos 10"/>
+    <node name="static_localisation_vive_world_to_map" pkg="tf" type="static_transform_publisher" args="0 0 0 0 -1.57 -1.57 vive_world map 10"/>
+</launch>
