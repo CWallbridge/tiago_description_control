@@ -24,6 +24,8 @@ import underworlds.server
 from underworlds.tools.loader import ModelLoader
 from underworlds.tools.spatial_relations import *
 from underworlds.tools.edit import *
+from underworlds.helpers.geometry import get_world_transform
+from underworlds.helpers.transformations import *
 
 import csv
 from sklearn.svm import SVC
@@ -391,6 +393,7 @@ if __name__ == "__main__":
     prev_x = 0
     prev_y = 0
     prev_z = 0
+    prev_yaw = 0
     previous_vector = numpy.array([0,0,0])
     
     rospy.init_node("tiago_behaviours");
@@ -409,28 +412,28 @@ if __name__ == "__main__":
 
     state = "wait"
     
-    clf = load_mlp_classifier("mlp_placement_cur.sav")
+    #clf = load_mlp_classifier("mlp_placement_cur.sav")
 
     world1 = ctx.worlds["map1"]
     world2 = ctx.worlds["map2"]
     
-    ModelLoader().load("res/map_wEmpty.blend", world="map1")
-    ModelLoader().load("res/map2_wEmpty.blend", world="map2")
+    ModelLoader().load("res/map1.blend", world="map1")
+    ModelLoader().load("res/map2.blend", world="map2")
     
     time.sleep(5) # leave some time for the loader to finish
     
-    target[0][0] = world1.scene.nodebyname("residence-18")[0].id
-    target[0][1] = world1.scene.nodebyname("manor")[0].id
-    target[0][2] = world1.scene.nodebyname("residence-7")[0].id
-    target[0][3] = world1.scene.nodebyname("commercial_district-1")[0].id
-    target[0][4] = world1.scene.nodebyname("police_department")[0].id
-    target[0][5] = world1.scene.nodebyname("police_department-1")[0].id
-    target[1][0] = world2.scene.nodebyname("hospital-1")[0].id
-    target[1][1] = world2.scene.nodebyname("hospital-2")[0].id
-    target[1][2] = world2.scene.nodebyname("residence-6")[0].id
-    target[1][3] = world2.scene.nodebyname("hospital")[0].id
-    target[1][4] = world2.scene.nodebyname("residence-17")[0].id
-    target[1][5] = world2.scene.nodebyname("manor-1")[0].id
+    target[0][0] = world1.scene.nodebyname("chrome_barrel")[0].id
+    target[0][1] = world1.scene.nodebyname("green_barrel")[0].id
+    target[0][2] = world1.scene.nodebyname("green_barrel.001")[0].id
+    target[0][3] = world1.scene.nodebyname("grey_barrel")[0].id
+    target[0][4] = world1.scene.nodebyname("silver_barrel")[0].id
+    target[0][5] = world1.scene.nodebyname("yellow_barrel")[0].id
+    target[1][0] = world2.scene.nodebyname("chrome_barrel.001")[0].id
+    target[1][1] = world2.scene.nodebyname("green_barrel.002")[0].id
+    target[1][2] = world2.scene.nodebyname("grey_barrel.001")[0].id
+    target[1][3] = world2.scene.nodebyname("silver_barrel.001")[0].id
+    target[1][4] = world2.scene.nodebyname("yellow_barrel.001")[0].id
+    target[1][5] = world2.scene.nodebyname("yellow_barrel.002")[0].id
     
     #obj_frame_id[0].append("1_1_residential")
     #obj_frame_id[0].append("1_2_manor")
@@ -496,46 +499,64 @@ if __name__ == "__main__":
 
     while not rospy.is_shutdown():
                 
-        if state == "na_describe" and (((rospy.Time.now() - last_desc).to_sec() > 5) or (new_desc == True)):
-            last_desc = na_description(cur_map, cur_targ)
         
-        if state == "d_describe":
+        if state != "wait":
             
             if new_desc == True or targ_found == False:
             
                 targ_found = False
                 
-                prev_x = 0
-                prev_y = 0
-                prev_z = 0
-                previous_vector = numpy.array([0,0,0])
+               _, _, _, translate, _ = tf.transformations.decompose_matrix(get_world_transform(world.scene, world.scene.nodes[target[cur_map][cur_targ]]))
                 
-                cur_obj_id = target[cur_map][cur_targ]
+                target_x, target_y, target_z = translate
                 
-                try:
-                    (trans, rot) = tl.lookupTransform(cur_targ_frame, '/sandtray', rospy.Time(0))
+                targ_found = True
+                
+                #prev_x = 0
+                #prev_y = 0
+                #prev_z = 0
+                #previous_vector = numpy.array([0,0,0])
+                
+                #cur_obj_id = target[cur_map][cur_targ]
+                
+                #try:
+                    #(trans, rot) = tl.lookupTransform(cur_targ_frame, '/sandtray', rospy.Time(0))
                     
-                    target_x = trans[0]
-                    target_y = trans[1]
-                    target_z = trans[2]
+                    #target_x = trans[0]
+                    #target_y = trans[1]
+                    #target_z = trans[2]
                     
-                    targ_found = True
+                    #targ_found = True
                     
-                except Exception as e:
-                    print "exception in targ_frame"
-                    print e
-                    pass
+                #except Exception as e:
+                    #print "exception in targ_frame"
+                    #print e
+                    #pass
             
-            if targ_found == False:
-                continue
+            #if targ_found == False:
+                #continue
             
             try:
 
-                (trans, rot) = tl.lookupTransform(obj_frame_id[cur_map][cur_targ], '/sandtray', rospy.Time(0))
+                (trans, rot) = tl.lookupTransform('grab_pos', 'map', rospy.Time(0))
+
+                cur_roll, cur_pitch, cur_yaw = euler_from_quaternion(rot)
 
                 cur_x = trans[0]
                 cur_y = trans[1]
                 cur_z = trans[2]
+                
+                world.scene.nodes['grab_pos'].transformation = compose_matrix(angles = [cur_roll, cur_pitch, cur_yaw], translate = cur_x, cur_y, cur_z)
+                
+                (trans, rot) = tl.lookupTransform('base_footprint', 'map', rospy.Time(0))
+
+                base_roll, base_pitch, base_yaw = euler_from_quaternion(rot)
+
+                base_x = trans[0]
+                base_y = trans[1]
+                base_z = trans[2]
+                
+                world.scene.nodes['base_pos'].transformation = compose_matrix(angles = [base_roll, base_pitch, base_yaw], translate = base_x, base_y, base_z)
                 
                 x_vec = cur_x - prev_x
                 y_vec = cur_y - prev_y
@@ -573,18 +594,20 @@ if __name__ == "__main__":
                 prev_y = cur_y
                 prev_z = cur_z
                 
+                prev_yaw = cur_yaw
+                
                 previous_vector = vector
                 
-                pred_data = numpy.array([distance_to_target, change_in_dist, mag, angle_from_prev])
+                #pred_data = numpy.array([distance_to_target, change_in_dist, mag, angle_from_prev])
                 
-                shaped_data = pred_data.reshape(1,-1)
+                #shaped_data = pred_data.reshape(1,-1)
                 
-                decision = clf.predict(shaped_data)
+                #decision = clf.predict(shaped_data)
                 
-                decision_list.append(int(decision[0]))
+                #decision_list.append(int(decision[0]))
                 
-                if len(decision_list) > 10:
-                    decision_list.pop(0)
+                #if len(decision_list) > 10:
+                    #decision_list.pop(0)
                 
                 #print decision
             
@@ -592,63 +615,69 @@ if __name__ == "__main__":
                 print "exception in obj_frame"
                 print e
                 pass
+
+            
+            if state == "na_describe" and (((rospy.Time.now() - last_desc).to_sec() > 5) or (new_desc == True)):
+                last_desc = na_description(cur_map, cur_targ)
+            
+            if state == "d_describe":
                 
-            time_since_last = (rospy.Time.now() - last_desc).to_sec()
-            
-            if time_since_last > 0.5 or new_desc == True:
-                if new_desc == True:
-                    final_dec = "initial"
-                elif len(decision_list) == 0:
-                    final_dec = "elaborate"
-                else:
-                    #print decision_list
-                    avg_decision = float(sum(decision_list))/float(len(decision_list))
-                    #print avg_decision
-                    if avg_decision < 0.8:
-                        final_dec = "negate"
-                    elif avg_decision > 1.5:
-                        final_dec = "positive"
-                    else:
-                        final_dec = "elaborate"
-                        
-                if (final_dec == "initial") or (final_dec  == "negate") or (final_dec == "elaborate" and time_since_last >= 1) or (final_dec == "positive" and time_since_last >= 2):
-                    d_desc = d_description(cur_obj_id, final_dec, numpy.array([cur_x, cur_y, cur_z]))
                     
-                    if final_dec == "elaborate" and d_desc == prev_desc and time_since_last < 5:
-                        pass
+                time_since_last = (rospy.Time.now() - last_desc).to_sec()
+                
+                if time_since_last > 0.5 or new_desc == True:
+                    if new_desc == True:
+                        final_dec = "initial"
+                    elif len(decision_list) == 0:
+                        final_dec = "elaborate"
                     else:
+                        #print decision_list
+                        avg_decision = float(sum(decision_list))/float(len(decision_list))
+                        #print avg_decision
+                        if avg_decision < 0.8:
+                            final_dec = "negate"
+                        elif avg_decision > 1.5:
+                            final_dec = "positive"
+                        else:
+                            final_dec = "elaborate"
+                            
+                    if (final_dec == "initial") or (final_dec  == "negate") or (final_dec == "elaborate" and time_since_last >= 1) or (final_dec == "positive" and time_since_last >= 2):
+                        d_desc = d_description(cur_obj_id, final_dec, numpy.array([cur_x, cur_y, cur_z]))
                         
-                        targetpose = PoseStamped()        
-                        targetpose.header.frame_id = str(cur_map + 1) + "_" + str(cur_targ + 1) + "_target"
-                        targetpose.header.stamp = rospy.Time(0)
-    
-                        look_at(targetpose)
-                        
-                        #vct_val = 90 + random.randint(0,20)
-                        #msg = "\VCT=" + str(vct_val) + "\ " + d_desc 
-                        
-                        #pub_rob_start.publish()
-                        #pub_rob_desc.publish(str(msg) + " - " + str(rospy.Time.now()))
-                        write_log("Tiago Starts Speaking")
-                        write_log(msg)
-                        tts.say(msg)
-                        tts.runAndWait()
-                        write_log("Tiago Stops Speaking")
-                        
-                        #pub_rob_end.publish()
-                        
-                        prev_desc = d_desc
-                        
-                        #trackerProxy.lookAt([1,0,0.6], 0, .1,False)
-                        
-                        last_desc = rospy.Time.now()
-                        
-                else:
-                    pass
+                        if final_dec == "elaborate" and d_desc == prev_desc and time_since_last < 5:
+                            pass
+                        else:
+                            
+                            targetpose = PoseStamped()        
+                            targetpose.header.frame_id = str(cur_map + 1) + "_" + str(cur_targ + 1) + "_target"
+                            targetpose.header.stamp = rospy.Time(0)
         
+                            look_at(targetpose)
+                            
+                            #vct_val = 90 + random.randint(0,20)
+                            #msg = "\VCT=" + str(vct_val) + "\ " + d_desc 
+                            
+                            #pub_rob_start.publish()
+                            #pub_rob_desc.publish(str(msg) + " - " + str(rospy.Time.now()))
+                            write_log("Tiago Starts Speaking")
+                            write_log(msg)
+                            tts.say(msg)
+                            tts.runAndWait()
+                            write_log("Tiago Stops Speaking")
+                            
+                            #pub_rob_end.publish()
+                            
+                            prev_desc = d_desc
+                            
+                            #trackerProxy.lookAt([1,0,0.6], 0, .1,False)
+                            
+                            last_desc = rospy.Time.now()
+                            
+                    else:
+                        pass
+                    
+            write_position_log(cur_x, cur_y, cur_yaw, prev_x, prev_y, prev_yaw, target_x, target_y)
             
-        if state != "wait":
-            write_position_log(cur_x, cur_y, cur_yaw, target_x, target_y)
         else:
             pass
 
