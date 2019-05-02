@@ -414,26 +414,39 @@ if __name__ == "__main__":
     
     #clf = load_mlp_classifier("mlp_placement_cur.sav")
 
-    world1 = ctx.worlds["map1"]
-    world2 = ctx.worlds["map2"]
+    world = []
+    world[0] = ctx.worlds["map1"]
+    world[1] = ctx.worlds["map2"]
     
     ModelLoader().load("res/map1.blend", world="map1")
     ModelLoader().load("res/map2.blend", world="map2")
     
     time.sleep(5) # leave some time for the loader to finish
     
-    target[0][0] = world1.scene.nodebyname("chrome_barrel")[0].id
-    target[0][1] = world1.scene.nodebyname("green_barrel")[0].id
-    target[0][2] = world1.scene.nodebyname("green_barrel.001")[0].id
-    target[0][3] = world1.scene.nodebyname("grey_barrel")[0].id
-    target[0][4] = world1.scene.nodebyname("silver_barrel")[0].id
-    target[0][5] = world1.scene.nodebyname("yellow_barrel")[0].id
-    target[1][0] = world2.scene.nodebyname("chrome_barrel.001")[0].id
-    target[1][1] = world2.scene.nodebyname("green_barrel.002")[0].id
-    target[1][2] = world2.scene.nodebyname("grey_barrel.001")[0].id
-    target[1][3] = world2.scene.nodebyname("silver_barrel.001")[0].id
-    target[1][4] = world2.scene.nodebyname("yellow_barrel.001")[0].id
-    target[1][5] = world2.scene.nodebyname("yellow_barrel.002")[0].id
+    target[0][0] = world[0].scene.nodebyname("chrome_barrel")[0].id
+    target[0][1] = world[0].scene.nodebyname("green_barrel")[0].id
+    target[0][2] = world[0].scene.nodebyname("green_barrel.001")[0].id
+    target[0][3] = world[0].scene.nodebyname("grey_barrel")[0].id
+    target[0][4] = world[0].scene.nodebyname("silver_barrel")[0].id
+    target[0][5] = world[0].scene.nodebyname("yellow_barrel")[0].id
+    target[1][0] = world[1].scene.nodebyname("chrome_barrel.001")[0].id
+    target[1][1] = world[1].scene.nodebyname("green_barrel.002")[0].id
+    target[1][2] = world[1].scene.nodebyname("grey_barrel.001")[0].id
+    target[1][3] = world[1].scene.nodebyname("silver_barrel.001")[0].id
+    target[1][4] = world[1].scene.nodebyname("yellow_barrel.001")[0].id
+    target[1][5] = world[1].scene.nodebyname("yellow_barrel.002")[0].id
+    
+    grab_pos_id = []
+    grab_pos_id[0] = world[0].scene.nodebyname("_grab_pos")[0].id
+    grab_pos_id[1] = world[1].scene.nodebyname("_grab_pos")[0].id
+    
+    base_pos_id = []
+    base_pos_id[0] = world[0].scene.nodebyname("_base_pos")[0].id
+    base_pos_id[1] = world[1].scene.nodebyname("_base_pos")[0].id
+    
+    rad_marker_id = []
+    rad_marker_id[0] = world[0].scene.nodebyname("_rad_marker")[0].id
+    rad_marker_id[1] = world[1].scene.nodebyname("_rad_marker")[0].id
     
     #obj_frame_id[0].append("1_1_residential")
     #obj_frame_id[0].append("1_2_manor")
@@ -451,11 +464,13 @@ if __name__ == "__main__":
     #obj_frame_id[1].append("2_6_manor")
     #obj_frame_id[1].append("2_7_power")
     
-    for node in world1.scene.nodes:
-        format_name("map1", node.id)
+    for node in world[0].scene.nodes:
+        if node.name[0] != '_':
+            format_name("map1", node.id)
     
-    for node in world2.scene.nodes:
-        format_name("map2", node.id)
+    for node in world[1].scene.nodes:
+        if node.name[0] != '_':
+            format_name("map2", node.id)
         
     time.sleep(10)
     
@@ -463,24 +478,19 @@ if __name__ == "__main__":
     j = 0
     
     while i < 2:
-        if i == 0:
-            worldname = "map1"
-        else:
-            worldname = "map2"
+        if i == 1:
             na_desc.append([])
-           
-        world = ctx.worlds[worldname]
-        
+
         target_chk = target[i]
         
         node_chk = []
         
         for node_id in target_chk:
-            node_chk.append(world.scene.nodes[node_id])
+            node_chk.append(world[i].scene.nodes[node_id])
         
-        while j < 7:
+        while j < 6:
             node_chk.pop(0)
-            desc = gen_spatial_desc(ctx, worldname, target[i][j], "default", node_chk,"en_GB","NonAmbig", "placement", True)
+            desc = gen_spatial_desc(ctx, world[i].name, target[i][j], "default", node_chk,"en_GB","NonAmbig", "locate", True)
             na_desc[i].append(str(desc))
             j = j+1
             
@@ -506,9 +516,11 @@ if __name__ == "__main__":
             
                 targ_found = False
                 
-               _, _, _, translate, _ = tf.transformations.decompose_matrix(get_world_transform(world.scene, world.scene.nodes[target[cur_map][cur_targ]]))
+               _, _, _, translate, _ = tf.transformations.decompose_matrix(get_world_transform(world[cur_map].scene, world[cur_map].scene.nodes[target[cur_map][cur_targ]]))
                 
                 target_x, target_y, target_z = translate
+                
+                target_z = 0 #We don't actually care about z in this case and it will throw off the numbers.
                 
                 targ_found = True
                 
@@ -546,7 +558,9 @@ if __name__ == "__main__":
                 cur_y = trans[1]
                 cur_z = trans[2]
                 
-                world.scene.nodes['grab_pos'].transformation = compose_matrix(angles = [cur_roll, cur_pitch, cur_yaw], translate = cur_x, cur_y, cur_z)
+                cur_z = 0 #We don't actually care about z in this case and it will throw off the numbers.
+                
+                world[cur_map].scene.nodes[grab_pos_id[cur_map]].transformation = compose_matrix(angles = [cur_roll, cur_pitch, cur_yaw], translate = cur_x, cur_y, cur_z)
                 
                 (trans, rot) = tl.lookupTransform('base_footprint', 'map', rospy.Time(0))
 
@@ -556,7 +570,7 @@ if __name__ == "__main__":
                 base_y = trans[1]
                 base_z = trans[2]
                 
-                world.scene.nodes['base_pos'].transformation = compose_matrix(angles = [base_roll, base_pitch, base_yaw], translate = base_x, base_y, base_z)
+                world[cur_map].scene.nodes[base_pos_id[cur_map]].transformation = compose_matrix(angles = [base_roll, base_pitch, base_yaw], translate = base_x, base_y, base_z)
                 
                 x_vec = cur_x - prev_x
                 y_vec = cur_y - prev_y
@@ -648,11 +662,11 @@ if __name__ == "__main__":
                             pass
                         else:
                             
-                            targetpose = PoseStamped()        
-                            targetpose.header.frame_id = str(cur_map + 1) + "_" + str(cur_targ + 1) + "_target"
-                            targetpose.header.stamp = rospy.Time(0)
+                            #targetpose = PoseStamped()        
+                            #targetpose.header.frame_id = str(cur_map + 1) + "_" + str(cur_targ + 1) + "_target"
+                            #targetpose.header.stamp = rospy.Time(0)
         
-                            look_at(targetpose)
+                            #look_at(targetpose)
                             
                             #vct_val = 90 + random.randint(0,20)
                             #msg = "\VCT=" + str(vct_val) + "\ " + d_desc 
