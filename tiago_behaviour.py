@@ -7,6 +7,7 @@ from std_msgs.msg import String
 from std_msgs.msg import Empty
 from time import sleep
 from datetime import datetime
+from operator import itemgetter 
 import rospy
 import tf
 import motion
@@ -40,7 +41,7 @@ prev_state = "idle"
 
 ctx = underworlds.Context("Tiago Description")
 
-target = numpy.empty((2,7), dtype="a36")
+target = numpy.empty((2,6), dtype="a36")
 na_desc = [[]]
 obj_frame_id = [[]]
 
@@ -415,13 +416,14 @@ if __name__ == "__main__":
     #clf = load_mlp_classifier("mlp_placement_cur.sav")
 
     world = []
-    world[0] = ctx.worlds["map1"]
-    world[1] = ctx.worlds["map2"]
     
     ModelLoader().load("res/map1.blend", world="map1")
     ModelLoader().load("res/map2.blend", world="map2")
     
     time.sleep(5) # leave some time for the loader to finish
+    
+    world.append(ctx.worlds["map1"])
+    world.append(ctx.worlds["map2"])
     
     target[0][0] = world[0].scene.nodebyname("chrome_barrel")[0].id
     target[0][1] = world[0].scene.nodebyname("green_barrel")[0].id
@@ -429,12 +431,12 @@ if __name__ == "__main__":
     target[0][3] = world[0].scene.nodebyname("grey_barrel")[0].id
     target[0][4] = world[0].scene.nodebyname("silver_barrel")[0].id
     target[0][5] = world[0].scene.nodebyname("yellow_barrel")[0].id
-    target[1][0] = world[1].scene.nodebyname("chrome_barrel.001")[0].id
-    target[1][1] = world[1].scene.nodebyname("green_barrel.002")[0].id
-    target[1][2] = world[1].scene.nodebyname("grey_barrel.001")[0].id
-    target[1][3] = world[1].scene.nodebyname("silver_barrel.001")[0].id
-    target[1][4] = world[1].scene.nodebyname("yellow_barrel.001")[0].id
-    target[1][5] = world[1].scene.nodebyname("yellow_barrel.002")[0].id
+    target[1][5] = world[1].scene.nodebyname("chrome_barrel.001")[0].id
+    target[1][4] = world[1].scene.nodebyname("green_barrel.002")[0].id
+    target[1][3] = world[1].scene.nodebyname("grey_barrel.001")[0].id
+    target[1][2] = world[1].scene.nodebyname("silver_barrel.001")[0].id
+    target[1][1] = world[1].scene.nodebyname("yellow_barrel.001")[0].id
+    target[1][0] = world[1].scene.nodebyname("yellow_barrel.002")[0].id
     
     grab_pos_id = []
     grab_pos_id[0] = world[0].scene.nodebyname("_grab_pos")[0].id
@@ -490,7 +492,7 @@ if __name__ == "__main__":
         
         while j < 6:
             node_chk.pop(0)
-            desc = gen_spatial_desc(ctx, world[i].name, target[i][j], "default", node_chk,"en_GB","NonAmbig", "locate", True)
+            desc = gen_spatial_desc(ctx, world[i].name, target[i][j], "default", node_chk,"en_GB","NonAmbig", "locate", False, True, 4)
             na_desc[i].append(str(desc))
             j = j+1
             
@@ -636,7 +638,6 @@ if __name__ == "__main__":
             
             if state == "d_describe":
                 
-                    
                 time_since_last = (rospy.Time.now() - last_desc).to_sec()
                 
                 if time_since_last > 0.5 or new_desc == True:
