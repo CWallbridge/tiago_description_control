@@ -468,11 +468,19 @@ if __name__ == "__main__":
     
     for node in world[0].scene.nodes:
         if node.name[0] != '_':
-            format_name("map1", node.id)
+            while len(world[0].scene.nodes[node.id].name.split('.')) > 1 or len(world[0].scene.nodes[node.id].name.split('_')) > 1:
+                print "Attempting Format"
+                format_name("map1", node.id)
+                time.sleep(0.2)
+            print world[0].scene.nodes[node.id].name
     
     for node in world[1].scene.nodes:
         if node.name[0] != '_':
-            format_name("map2", node.id)
+            while len(world[1].scene.nodes[node.id].name.split('.')) > 1 or len(world[1].scene.nodes[node.id].name.split('_')) > 1:
+                print "Attempting Format"
+                format_name("map2", node.id)
+                time.sleep(0.2)
+            print world[1].scene.nodes[node.id].name
         
     time.sleep(10)
     
