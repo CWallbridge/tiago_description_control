@@ -517,6 +517,8 @@ if __name__ == "__main__":
     new_desc = False
     prev_desc = ""
 
+    print("Boot complete, awaiting commands")
+
     while not rospy.is_shutdown():
                 
         
@@ -531,6 +533,8 @@ if __name__ == "__main__":
                 target_x, target_y, target_z = translate
                 
                 target_z = 0 #We don't actually care about z in this case and it will throw off the numbers.
+                
+                world[cur_map].scene.nodes[rad_marker_id[cur_map]].transformation = compose_matrix(translate = [target_x, target_y, 0.205])
                 
                 targ_found = True
                 
