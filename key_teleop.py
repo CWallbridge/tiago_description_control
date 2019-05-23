@@ -355,6 +355,7 @@ class SimpleKeyTeleop():
                 #self._move_arm('over_pos')
                 #self._move_arm('idle_pos')
                 self._state = 'grab'
+                keycode = ord('a')
                 
             elif keycode in self.movement_bindings:
                 self._last_pressed[keycode] = rospy.get_time()
@@ -364,6 +365,7 @@ class SimpleKeyTeleop():
                 self._move_arm('over_pos')
                 self._move_arm('idle_pos')
                 self._state = 'drive'
+                keycode = ord('a')
 
     def _publish(self):
         self._interface.clear()
