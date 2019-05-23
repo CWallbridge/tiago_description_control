@@ -242,7 +242,7 @@ def write_log(log):
         logwriter = csv.writer(csvfile)
         logwriter.writerow([rospy.Time.now() - start_log_time, log])
         
-def write_position_log(x,y,yaw,targ_x,targ_y):
+def write_position_log(x, y, yaw, prev_x, prev_y, prev_yaw, target_x, target_y):
 
     global logpath
     global start_log_time
@@ -250,7 +250,7 @@ def write_position_log(x,y,yaw,targ_x,targ_y):
     csvpath = os.path.join(logpath, 'position_log.csv')
     with open(csvpath, 'a') as csvfile:
         logwriter = csv.writer(csvfile)
-        logwriter.writerow([rospy.Time.now() - start_log_time, x, y, yaw, targ_x, targ_y])
+        logwriter.writerow([rospy.Time.now() - start_log_time, x, y, yaw, prev_x, prev_y, prev_yaw, target_x, target_y])
     
 def command(message):
     
@@ -517,6 +517,10 @@ if __name__ == "__main__":
     new_desc = False
     prev_desc = ""
 
+    rad_scale, rad_shear, rad_angles, _, rad_persp = decompose_matrix(get_world_transform(world[cur_map].scene, world[cur_map].scene.nodes[rad_marker_id[cur_map]]))
+    base_scale, base_shear, _, _, base_persp = decompose_matrix(get_world_transform(world[cur_map].scene, world[cur_map].scene.nodes[base_pos_id[cur_map]]))
+    grab_scale, grab_shear, _, _, grab_persp = decompose_matrix(get_world_transform(world[cur_map].scene, world[cur_map].scene.nodes[grab_pos_id[cur_map]]))
+
     print("Boot complete, awaiting commands")
 
     while not rospy.is_shutdown():
@@ -534,7 +538,9 @@ if __name__ == "__main__":
                 
                 target_z = 0 #We don't actually care about z in this case and it will throw off the numbers.
                 
-                world[cur_map].scene.nodes[rad_marker_id[cur_map]].transformation = compose_matrix(translate = [target_x, target_y, 0.205])
+                world[cur_map].scene.nodes[rad_marker_id[cur_map]].transformation = compose_matrix(scale = rad_scale, shear = rad_shear, angles = rad_angles, translate = [target_x, target_y, 0.205], perspective = rad_persp)
+                
+                world[cur_map].scene.nodes.update(world[cur_map].scene.nodes[rad_marker_id[cur_map]])
                 
                 targ_found = True
                 
@@ -564,7 +570,7 @@ if __name__ == "__main__":
             
             try:
 
-                (trans, rot) = tl.lookupTransform('grab_pos', 'map', rospy.Time(0))
+                (trans, rot) = tl.lookupTransform('map', 'grab_pos', rospy.Time(0))
 
                 cur_roll, cur_pitch, cur_yaw = euler_from_quaternion(rot)
 
@@ -574,9 +580,10 @@ if __name__ == "__main__":
                 
                 cur_z = 0 #We don't actually care about z in this case and it will throw off the numbers.
                 
-                world[cur_map].scene.nodes[grab_pos_id[cur_map]].transformation = compose_matrix(angles = [cur_roll, cur_pitch, cur_yaw], translate = [cur_x, cur_y, cur_z])
+                world[cur_map].scene.nodes[grab_pos_id[cur_map]].transformation = compose_matrix(scale = grab_scale, shear = grab_shear, angles = [cur_roll, cur_pitch, cur_yaw], translate = [cur_x, cur_y, 0.25], perspective = grab_persp)
+                world[cur_map].scene.nodes.update(world[cur_map].scene.nodes[grab_pos_id[cur_map]])
                 
-                (trans, rot) = tl.lookupTransform('base_footprint', 'map', rospy.Time(0))
+                (trans, rot) = tl.lookupTransform('map', 'base_footprint', rospy.Time(0))
 
                 base_roll, base_pitch, base_yaw = euler_from_quaternion(rot)
 
@@ -584,7 +591,8 @@ if __name__ == "__main__":
                 base_y = trans[1]
                 base_z = trans[2]
                 
-                world[cur_map].scene.nodes[base_pos_id[cur_map]].transformation = compose_matrix(angles = [base_roll, base_pitch, base_yaw], translate = [base_x, base_y, base_z])
+                world[cur_map].scene.nodes[base_pos_id[cur_map]].transformation = compose_matrix(scale = base_scale, shear = base_shear, angles = [base_roll, base_pitch, base_yaw], translate = [base_x, base_y, base_z], perspective = base_persp)
+                world[cur_map].scene.nodes.update(world[cur_map].scene.nodes[base_pos_id[cur_map]])
                 
                 x_vec = cur_x - prev_x
                 y_vec = cur_y - prev_y
@@ -617,6 +625,8 @@ if __name__ == "__main__":
                     unit_vector_1 = vector/mag
                     unit_vector_2 = previous_vector/prev_mag
                     angle_from_prev = numpy.arccos(numpy.clip(numpy.dot(unit_vector_1, unit_vector_2), -1.0, 1.0))
+                
+                write_position_log(cur_x, cur_y, cur_yaw, prev_x, prev_y, prev_yaw, target_x, target_y)
                 
                 prev_x = cur_x
                 prev_y = cur_y
@@ -702,8 +712,6 @@ if __name__ == "__main__":
                             
                     else:
                         pass
-                    
-            write_position_log(cur_x, cur_y, cur_yaw, prev_x, prev_y, prev_yaw, target_x, target_y)
             
         else:
             pass
