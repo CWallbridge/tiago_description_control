@@ -271,22 +271,23 @@ def command(message):
     
     if message.data == "tutorial":
         
-        state = "wait"
-    
-        msg = "Hello. "
-        msg = msg + "I am Tiago, today we have an important job. "
-        msg = msg + "You should be able to see me in a room with some barrels through the security cameras. "
-        msg = msg + "Some of these barrels are emmitting different types of radiation. "
-        msg = msg + "We need to sort them for safe disposal. I am able to identify the radioactive barrels. "
-        msg = msg + "But I will need you to guide me to the locations I describe using the arrow keys on your keyboard. "
-        msg = msg + "Once I am in position you can command me to move my arm into the grab position, and then activate the electomagnet to pick up the barrel. "
-        msg = msg + "We will then need to bring it back to the starting point for later disposal. "
-        msg = msg + "Let's get started!"
+        if cond1 != "R":
+            state = "wait"
+        
+            msg = "Hello. "
+            msg = msg + "I am Tiago, today we have an important job. "
+            msg = msg + "You should be able to see me in a room with some barrels through the security cameras. "
+            msg = msg + "Some of these barrels are emmitting different types of radiation. "
+            msg = msg + "We need to sort them for safe disposal. I am able to identify the radioactive barrels. "
+            msg = msg + "But I will need you to guide me to the locations I describe using the arrow keys on your keyboard. "
+            msg = msg + "Once I am in position you can command me to move my arm into the grab position, and then activate the electomagnet to pick up the barrel. "
+            msg = msg + "We will then need to bring it back to the starting point for later disposal. "
+            msg = msg + "Let's get started!"
 
-        #msg = "\RSPD=90\ \VCT=100\ " + msg
+            #msg = "\RSPD=90\ \VCT=100\ " + msg
 
-        tts.say(msg)
-        tts.runAndWait()
+            tts.say(msg)
+            tts.runAndWait()
         
         create_log()
         
@@ -345,8 +346,9 @@ def command(message):
         #vct_val = 90 + random.randint(0,20)
         #msg = "\VCT=" + str(vct_val) + "\ " + msg 
         
-        tts.say(msg)
-        tts.runAndWait()
+        if cond1 != "R":
+            tts.say(msg)
+            tts.runAndWait()
         
         if cur_targ < 6:
             state = prev_state
