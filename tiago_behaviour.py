@@ -271,8 +271,8 @@ def command(message):
     
     if message.data == "tutorial":
         
+        state = "wait"
         if cond1 != "R":
-            state = "wait"
         
             msg = "Hello. "
             msg = msg + "I am Tiago, today we have an important job. "
