@@ -20,6 +20,16 @@ play_motion:
         name: idle_pos
         usage: erl
         description: 'Move arm into correct position for waiting and set head down.'
+        
+    idle_pos_left:
+      joints: ['torso_lift_joint','arm_1_joint', 'arm_2_joint', 'arm_3_joint', 'arm_4_joint', 'arm_5_joint', 'arm_6_joint', 'arm_7_joint', 'head_1_joint', 'head_2_joint']
+      points:
+      - positions: [0.30, 2.5, 0.26, 0.03, 0.87, -1.57, 0.75, -0.05, 0.00, -0.97]
+        time_from_start: 3.0
+      meta:
+        name: idle_pos
+        usage: erl
+        description: 'Move arm into correct position for waiting and set head down.'
 
     over_pos:
       joints: ['torso_lift_joint', 'arm_1_joint', 'arm_2_joint', 'arm_3_joint', 'arm_4_joint', 'arm_5_joint', 'arm_6_joint', 'arm_7_joint']
