@@ -188,7 +188,7 @@ class CommandTeleop():
 
 def main(stdscr):
     #moveit_commander.roscpp_initialize(sys.argv)
-    rospy.init_node('key_teleop')
+    rospy.init_node('cmd_interface')
     app = CommandTeleop(TextWindow(stdscr))
     app.run()
 
