@@ -388,8 +388,10 @@ class SimpleKeyTeleop():
             if keycode == ord('g'):
                 self._move_arm('over_pos')
                 if self._arm_pos == "right":
+                    self._move_arm('idle_pos')
                     self._move_arm('loaded_pos')
                 else:
+                    self._move_arm('idle_pos_left')
                     self._move_arm('loaded_pos_left')
                 self._state = 'drive'
                 keycode = ord('a')
