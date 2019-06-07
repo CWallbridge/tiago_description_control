@@ -240,6 +240,7 @@ class SimpleKeyTeleop():
         self._angular = 0
         self._linear = 0
         self._arm_pos = "right"
+        self._drive_mode = "normal"
 
         self._move_arm('stretch')
         self._move_arm('unfold_arm')
@@ -317,12 +318,12 @@ class SimpleKeyTeleop():
         self._linear = linear
         
     def _move_arm(self, motion):
-        rospy.loginfo("Starting run_motion_python application...")
+        #rospy.loginfo("Starting run_motion_python application...")
         #_wait_for_valid_time(10.0)
 
         client = SimpleActionClient('/play_motion', PlayMotionAction)
 
-        rospy.loginfo("Waiting for Action Server...")
+        #rospy.loginfo("Waiting for Action Server...")
         client.wait_for_server()
 
         goal = PlayMotionGoal()
@@ -330,10 +331,10 @@ class SimpleKeyTeleop():
         goal.skip_planning = False
         goal.priority = 0  # Optional
 
-        rospy.loginfo("Sending goal with motion: " + motion)
+        #rospy.loginfo("Sending goal with motion: " + motion)
         client.send_goal(goal)
 
-        rospy.loginfo("Waiting for result...")
+        #rospy.loginfo("Waiting for result...")
         action_ok = client.wait_for_result(rospy.Duration(30.0))
 
         state = client.get_state()
@@ -366,6 +367,18 @@ class SimpleKeyTeleop():
                     self._arm_pos = "right"
                     self._move_arm('idle_pos')
                 keycode = ord('a')
+            
+            elif keycode == ord('f'):
+                if self._drive_mode == "normal":
+                    self._drive_mode = "precision"
+                    self._forward_rate = rospy.get_param('~forward_rate', 0.1)
+                    self._backward_rate = rospy.get_param('~backward_rate', 0.1)
+                    self._rotation_rate = rospy.get_param('~rotation_rate', 0.1)
+                else:
+                    self._drive_mode = "normal"
+                    self._forward_rate = rospy.get_param('~forward_rate', 0.4)
+                    self._backward_rate = rospy.get_param('~backward_rate', 0.25)
+                    self._rotation_rate = rospy.get_param('~rotation_rate', 0.5)
                 
             elif keycode in self.movement_bindings:
                 self._last_pressed[keycode] = rospy.get_time()
@@ -382,9 +395,13 @@ class SimpleKeyTeleop():
 
     def _publish(self):
         self._interface.clear()
-        self._interface.write_line(2, 'Linear: %f, Angular: %f, Arm Position : %s' % (self._linear, self._angular, self._arm_pos))
+        self._interface.write_line(2, 'Linear: %f, Angular: %f, Arm Position : %s, Drive Mode : %s' % (self._linear, self._angular, self._arm_pos, self._drive_mode))
         if self._state == 'drive':
             self._interface.write_line(5, 'Use arrow keys to move, g to go to grab position, h to switch arm positions, q to exit.')
+            self._interface.write_line(6, 'g to go to grab position')
+            self._interface.write_line(7, 'h to switch arm positions')
+            self._interface.write_line(8, 'f to switch to toggle fine position control')
+            self._interface.write_line(9, 'q to exit')
         if self._state == 'grab':
             self._interface.write_line(5, 'Press g to leave grab position and resume driving, q to exit.')
         self._interface.refresh()
