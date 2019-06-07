@@ -15,10 +15,12 @@ class convert_and_target:
     def __init__(self):
 
         self.bridge = CvBridge()
+        print("Setup Subscriber")
         self.image_sub = rospy.Subscriber("xtion/rgb/image_raw", Image, self.callback)
+#        self.image_sub = rospy.Subscriber("xtion/rgb/image_raw/compressed", Image, self.callback)
     
     def callback(self, data):
-        
+#        print("Image received")
         try:
             cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
         except CvBridgeError as e:
@@ -36,6 +38,7 @@ if __name__ == '__main__':
     
     cat = convert_and_target()
     rospy.init_node('convert_and_target', anonymous=True)
+    print("Init finished")
     try:
         rospy.spin()
     except KeyboardInterrupt:
