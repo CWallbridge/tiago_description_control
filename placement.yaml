@@ -50,3 +50,24 @@ play_motion:
         name: grab_pos
         usage: erl
         description: 'Sink torso down to grab object.'
+        
+    loaded_pos:
+      joints: ['torso_lift_joint', 'arm_1_joint', 'arm_2_joint', 'arm_3_joint', 'arm_4_joint', 'arm_5_joint', 'arm_6_joint', 'arm_7_joint']
+      points:
+      - positions: [0.30, 0.16, -0.06, -0.30, 2.18, -1.29, -0.83, -0.05]
+        time_from_start: 2.0
+      meta:
+        name: over_pos
+        usage: erl
+        description: 'Move arm over the grab location'
+        
+    loaded_pos_left:
+      joints: ['torso_lift_joint', 'arm_1_joint', 'arm_2_joint', 'arm_3_joint', 'arm_4_joint', 'arm_5_joint', 'arm_6_joint', 'arm_7_joint']
+      points:
+      - positions: [0.30, 2.22, -0.06, -0.30, 2.18, -1.29, -0.83, -0.05]
+        time_from_start: 2.0
+      meta:
+        name: over_pos
+        usage: erl
+        description: 'Move arm over the grab location'
+    

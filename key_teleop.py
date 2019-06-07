@@ -245,6 +245,7 @@ class SimpleKeyTeleop():
         self._move_arm('stretch')
         self._move_arm('unfold_arm')
         self._move_arm('idle_pos')
+        self._move_arm('loaded_pos')
         
         self._state = 'drive'
 
@@ -362,10 +363,10 @@ class SimpleKeyTeleop():
             elif keycode == ord('h'):
                 if self._arm_pos == "right":
                     self._arm_pos = "left"
-                    self._move_arm('idle_pos_left')
+                    self._move_arm('loaded_pos_left')
                 else:
                     self._arm_pos = "right"
-                    self._move_arm('idle_pos')
+                    self._move_arm('loaded_pos')
                 keycode = ord('a')
             
             elif keycode == ord('f'):
@@ -387,11 +388,13 @@ class SimpleKeyTeleop():
             if keycode == ord('g'):
                 self._move_arm('over_pos')
                 if self._arm_pos == "right":
-                    self._move_arm('idle_pos')
+                    self._move_arm('loaded_pos')
                 else:
-                    self._move_arm('idle_pos_left')
+                    self._move_arm('loaded_pos_left')
                 self._state = 'drive'
                 keycode = ord('a')
+
+                
 
     def _publish(self):
         self._interface.clear()
