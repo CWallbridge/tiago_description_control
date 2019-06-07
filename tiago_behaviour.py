@@ -299,6 +299,7 @@ def command(message):
         write_log("Start First Map")
         
         cur_map = int(order)
+        cur_targ = 0
         cur_targ_frame = str(cur_map + 1) + "_" + str(cur_targ + 1) + "_target"
         new_desc = True
     
@@ -318,6 +319,7 @@ def command(message):
         write_log("Start Second Map")
         
         cur_map = 1 - int(order)
+        cur_targ = 0
         cur_targ_frame = str(cur_map + 1) + "_" + str(cur_targ + 1) + "_target"
         new_desc = True
             
