@@ -196,7 +196,7 @@ def d_description(node_id, decision, location):
     if new_desc == True:
         
         new_desc = False
-        desc, d_rel_list = dynamic_desc(ctx, worldName, [], node_id, 0, "initial", location, "default", "en_GB", True)
+        desc, d_rel_list = dynamic_desc(ctx, worldName, [], node_id, 0, "initial", location, "default", "en_GB", False, True)
         full_desc = desc
         iteration = 1
         
@@ -209,7 +209,7 @@ def d_description(node_id, decision, location):
             #desc = full_desc
             
     else:
-        desc, d_rel_list = dynamic_desc(ctx, worldName, d_rel_list, node_id, iteration, decision, location, "default", "en_GB", True)
+        desc, d_rel_list = dynamic_desc(ctx, worldName, d_rel_list, node_id, iteration, decision, location, "default", "en_GB", False, True, 0, "nearby")
     
     #print desc
     
@@ -263,11 +263,6 @@ def command(message):
     global new_desc
     global cur_targ_frame
     global prev_state
-    
-    try:
-        tts.stop()
-    except Exception as e:
-        print e
     
     if message.data == "tutorial":
         
@@ -332,6 +327,11 @@ def command(message):
             
     elif message.data == "success":
         
+        try:
+            tts.stop()
+        except Exception as e:
+            print e
+        
         write_log("Item placed")
         state = "wait"
         
@@ -362,6 +362,11 @@ def command(message):
         #print cur_targ_frame
         
     elif message.data == "wait":
+        
+        try:
+            tts.stop()
+        except Exception as e:
+            print e
         
         write_log("Item picked up")
         chatter = ["Good let's bring that one back.", "Nice work, now we need to bring it back to the start point.", "Ok we got it, bring the barrel back to the corner!"]
@@ -401,6 +406,8 @@ if __name__ == "__main__":
     prev_yaw = 0
     previous_vector = numpy.array([0,0,0])
     
+    req_yaw = 0
+    
     rospy.init_node("tiago_behaviours");
 
     last_desc = rospy.Time.now()
@@ -417,7 +424,7 @@ if __name__ == "__main__":
 
     state = "wait"
     
-    #clf = load_mlp_classifier("mlp_placement_cur.sav")
+    clf = load_mlp_classifier("mlp_placement_cur.sav")
 
     world = []
     
@@ -623,12 +630,22 @@ if __name__ == "__main__":
                 
                 prev_mag = numpy.linalg.norm(previous_vector)
                 
-                if mag == 0 or prev_mag == 0:
-                    angle_from_prev = 0
+                #if mag == 0 or prev_mag == 0:
+                #    angle_from_prev = 0
+                #else:
+                #    unit_vector_1 = vector/mag
+                #    unit_vector_2 = previous_vector/prev_mag
+                #    angle_from_prev = numpy.arccos(numpy.clip(numpy.dot(unit_vector_1, unit_vector_2), -1.0, 1.0))
+                
+                req_yaw =  math.atan2(target_y - base_y, target_x - base_x)
+                change_in_yaw = base_yaw - prev_yaw
+                
+                if req_yaw - base_yaw < -(math.pi):
+                    req_change_yaw = req_yaw - base_yaw + (2*math.pi)
+                elif req_yaw - base_yaw > math.pi:
+                    req_change_yaw = req_yaw - base_yaw - (2*math.pi)
                 else:
-                    unit_vector_1 = vector/mag
-                    unit_vector_2 = previous_vector/prev_mag
-                    angle_from_prev = numpy.arccos(numpy.clip(numpy.dot(unit_vector_1, unit_vector_2), -1.0, 1.0))
+                    req_change_yaw = req_yaw - base_yaw
                 
                 write_position_log(cur_x, cur_y, cur_yaw, prev_x, prev_y, prev_yaw, target_x, target_y)
                 
@@ -636,20 +653,20 @@ if __name__ == "__main__":
                 prev_y = cur_y
                 prev_z = cur_z
                 
-                prev_yaw = cur_yaw
+                prev_yaw = base_yaw
                 
                 previous_vector = vector
                 
-                #pred_data = numpy.array([distance_to_target, change_in_dist, mag, angle_from_prev])
+                pred_data = numpy.array([distance_to_target, change_in_dist, mag, change_in_yaw, req_yaw, req_change_yaw])
                 
-                #shaped_data = pred_data.reshape(1,-1)
+                shaped_data = pred_data.reshape(1,-1)
                 
-                #decision = clf.predict(shaped_data)
+                decision = clf.predict(shaped_data)
                 
-                #decision_list.append(int(decision[0]))
+                decision_list.append(int(decision[0]))
                 
-                #if len(decision_list) > 10:
-                    #decision_list.pop(0)
+                if len(decision_list) > 20:
+                    decision_list.pop(0)
                 
                 #print decision
             
@@ -677,15 +694,26 @@ if __name__ == "__main__":
                         #print avg_decision
                         if avg_decision < 0.8:
                             final_dec = "negate"
-                        elif avg_decision > 1.5:
+                        elif avg_decision > 1.6 and avg_decision < 2.6:
                             final_dec = "positive"
-                        else:
+                        elif avg_decision >= 2.6:
                             final_dec = "elaborate"
+                        else:
+                            final_dec = "navigate"
                             
-                    if (final_dec == "initial") or (final_dec  == "negate") or (final_dec == "elaborate" and time_since_last >= 1) or (final_dec == "positive" and time_since_last >= 2):
-                        d_desc = d_description(cur_obj_id, final_dec, numpy.array([cur_x, cur_y, cur_z]))
+                    if (final_dec == "initial") or (final_dec  == "negate") or ((final_dec == "elaborate" or final_dec == "navigate") and time_since_last >= 1) or (final_dec == "positive" and time_since_last >= 2):
                         
-                        if final_dec == "elaborate" and d_desc == prev_desc and time_since_last < 5:
+                        if final_dec == "navigate":
+                            if req_change_yaw > 0.2:
+                                d_desc = "turn left"
+                            elif req_change_yaw < -0.2:
+                                d_desc = "turn right"
+                            else:
+                                d_desc = "go forward"
+                        else:
+                            d_desc = d_description(cur_obj_id, final_dec, numpy.array([cur_x, cur_y, cur_z]))
+                        
+                        if (final_dec == "elaborate" or final_dec == "navigate") and d_desc == prev_desc and time_since_last < 5:
                             pass
                         else:
                             
