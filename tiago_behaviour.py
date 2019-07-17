@@ -332,7 +332,7 @@ def command(message):
         except Exception as e:
             print e
         
-        write_log("Item placed")
+        write_log("Item placed " + str(cur_map + 1) + "_" + str(cur_targ + 1) + "_target")
         state = "wait"
         
         cur_targ = cur_targ + 1
@@ -368,7 +368,7 @@ def command(message):
         except Exception as e:
             print e
         
-        write_log("Item picked up")
+        write_log("Item picked up " + str(cur_map + 1) + "_" + str(cur_targ + 1) + "_target")
         chatter = ["Good let's bring that one back.", "Nice work, now we need to bring it back to the start point.", "Ok we got it, bring the barrel back to the corner!"]
         prev_state = state
         state = "wait"
@@ -377,6 +377,15 @@ def command(message):
         
         write_log("Returnin to description")
         state = prev_state
+        
+    elif message.data == "grab":
+        
+        write_log("Grab pose initiated")
+        
+    elif message.data == "leave":
+        
+        write_log("Leaving grab pose")
+        
     
     else:
         order, _, _ = message.data.split('-')
@@ -549,7 +558,13 @@ if __name__ == "__main__":
                 
                 target_z = 0 #We don't actually care about z in this case and it will throw off the numbers.
                 
-                world[cur_map].scene.nodes[rad_marker_id[cur_map]].transformation = compose_matrix(scale = rad_scale, shear = rad_shear, angles = rad_angles, translate = [target_x, target_y, 0.205], perspective = rad_persp)
+                if cond1 == 'R':
+                    marker_z = 0.205
+                else:
+                    marker_z = -100
+                
+                world[cur_map].scene.nodes[rad_marker_id[cur_map]].transformation = compose_matrix(scale = rad_scale, shear = rad_shear, angles = rad_angles, translate = [target_x, target_y, marker_z], perspective = rad_persp)
+                
                 
                 world[cur_map].scene.nodes.update(world[cur_map].scene.nodes[rad_marker_id[cur_map]])
                 

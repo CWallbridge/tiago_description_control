@@ -230,6 +230,7 @@ class SimpleKeyTeleop():
     def __init__(self, interface):
         self._interface = interface
         self._pub_cmd = rospy.Publisher('key_vel', Twist)
+        self._pub_beh_cmd = rospy.Publisher('tiago/place_desc/command', String, queue_size=1)
 
         self._hz = rospy.get_param('~hz', 10)
 
@@ -353,6 +354,7 @@ class SimpleKeyTeleop():
         
         if self._state == 'drive':
             if keycode == ord('g'):
+                self._pub_beh_cmd.publish("grab")
                 self._move_arm('over_pos')
                 self._move_arm('grab_pos')
                 #self._move_arm('over_pos')
@@ -386,6 +388,7 @@ class SimpleKeyTeleop():
                 
         if self._state == 'grab':
             if keycode == ord('g'):
+                self._pub_beh_cmd.publish("leave")
                 self._move_arm('over_pos')
                 if self._arm_pos == "right":
                     self._move_arm('idle_pos')
@@ -395,8 +398,6 @@ class SimpleKeyTeleop():
                     self._move_arm('loaded_pos_left')
                 self._state = 'drive'
                 keycode = ord('a')
-
-                
 
     def _publish(self):
         self._interface.clear()
