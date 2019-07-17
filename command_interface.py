@@ -130,7 +130,7 @@ class CommandTeleop():
         if self._state == "Waiting":
             if keycode == ord('n'):
                 self._pub_cmd.publish("success")
-                if self._target < 6:
+                if self._target < 5:
                     self._target = self._target + 1
                     self._state = "Describing"
                 else:
