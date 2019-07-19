@@ -58,7 +58,7 @@ class CommandTeleop():
         self._last_pressed = {}
         self._angular = 0
         self._linear = 0
-        self._condition = "D-N"
+        self._condition = "N-D"
         self._map = 0
         self._target = 0
         self._state = "Setup"
@@ -130,8 +130,8 @@ class CommandTeleop():
         if self._state == "Waiting":
             if keycode == ord('n'):
                 self._pub_cmd.publish("success")
-                if self._target < 5:
-                    self._target = self._target + 1
+                self._target = self._target + 1
+                if self._target < 6:
                     self._state = "Describing"
                 else:
                     self._target = 0
