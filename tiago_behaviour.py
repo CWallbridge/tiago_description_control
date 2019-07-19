@@ -59,54 +59,21 @@ full_desc = ""
 logpath = ""
 
 tts = pyttsx.init()
+
 #tts.say('Good morning.')
 #tts.runAndWait()
 #tts.stop() - Might allow an interrupt
 
 target_change = False
 
-def build_classifier():
+def say(msg):
     
-    train = []
-    trainresult = []
-    test = []
-    testresult = []
+    global tts
     
-    with open('res/train.csv', 'rb') as csvfile:
-    
-        trainreader = csv.reader(csvfile, delimiter = ',', quotechar ='|')
-        
-        for row in trainreader:
-            
-            if train == []:
-                train = numpy.append(train, [row[0], row[1], row[2], row[3]])
-            else:
-                train = numpy.vstack((train, [row[0], row[1], row[2], row[3]]))
-            
-            trainresult = numpy.append(trainresult, [row[4]])
-
-        clf = SVC(gamma='auto', kernel='rbf')
-        clf.fit(train, trainresult) 
-    
-    with open('res/test.csv', 'rb') as csvtestfile:
-        
-        testreader = csv.reader(csvtestfile, delimiter = ',', quotechar ='|')
-        
-        for row in testreader:
-            
-            if test == []:
-                test = numpy.append(test, [row[0], row[1], row[2], row[3]])
-            else:
-                test = numpy.vstack((test, [row[0], row[1], row[2], row[3]]))
-            
-            testresult = numpy.append(testresult, [row[4]])
-
-        print(clf.score(test, testresult))
-        predresult = clf.predict(test)
-        
-        print confusion_matrix(testresult, predresult)
-        
-    return clf
+    tts = pyttsx.init()
+    tts.setProperty('rate', 125)
+    tts.say(msg)
+    a = tts.runAndWait()
     
 def load_mlp_classifier(filename):
     
@@ -122,11 +89,11 @@ def load_mlp_classifier(filename):
         for row in testreader:
             
             if test == []:
-                test = numpy.append(test, [float(row[0]), float(row[1]), float(row[2]), float(row[3])])
+                test = numpy.append(test, [float(row[0]), float(row[1]), float(row[2]), float(row[3]), float(row[4]), float(row[5])])
             else:
-                test = numpy.vstack((test, [float(row[0]), float(row[1]), float(row[2]), float(row[3])]))
+                test = numpy.vstack((test, [float(row[0]), float(row[1]), float(row[2]), float(row[3]), float(row[4]), float(row[5])]))
             
-            testresult = numpy.append(testresult, [row[4]])
+            testresult = numpy.append(testresult, [row[6]])
 
         print(clf.score(test, testresult))
         predresult = clf.predict(test)
@@ -151,22 +118,21 @@ def na_description(cur_map, targ):
     
     msg = na_desc[cur_map][targ]
     
-    targetpose = PoseStamped()        
-    targetpose.header.frame_id = str(cur_map + 1) + "_" + str(targ + 1) + "_target"
-    targetpose.header.stamp = rospy.Time(0)
+    #targetpose = PoseStamped()        
+    #targetpose.header.frame_id = str(cur_map + 1) + "_" + str(targ + 1) + "_target"
+    #targetpose.header.stamp = rospy.Time(0)
     
     #vct_val = 90 + random.randint(0,20)
     #msg = "\VCT=" + str(vct_val) + "\ " + msg 
     
-    look_at(targetpose)
+    #look_at(targetpose)
     
     #pub_rob_start.publish()
     #pub_rob_desc.publish(str(msg) + " - " + str(rospy.Time.now()))
     #say_id = textSpchProxy.post.say(msg)
     write_log("Tiago Starts Speaking")
     write_log(msg)
-    tts.say(msg)
-    tts.runAndWait()
+    say(msg)
     write_log("Tiago Stops Speaking")
     
     #pub_rob_end.publish()
@@ -175,7 +141,7 @@ def na_description(cur_map, targ):
     
     return rospy.Time.now()
    
-def d_description(node_id, decision, location):
+def d_description(node_id, decision):
 
     global new_desc
     global d_rel_list
@@ -196,7 +162,7 @@ def d_description(node_id, decision, location):
     if new_desc == True:
         
         new_desc = False
-        desc, d_rel_list = dynamic_desc(ctx, worldName, [], node_id, 0, "initial", location, "default", "en_GB", False, True)
+        desc, d_rel_list = dynamic_desc(ctx, worldName, [], node_id, 0, "initial", "default", "en_GB", False, True)
         full_desc = desc
         iteration = 1
         
@@ -209,7 +175,7 @@ def d_description(node_id, decision, location):
             #desc = full_desc
             
     else:
-        desc, d_rel_list = dynamic_desc(ctx, worldName, d_rel_list, node_id, iteration, decision, location, "default", "en_GB", False, True, 0, "nearby")
+        desc, d_rel_list = dynamic_desc(ctx, worldName, d_rel_list, node_id, iteration, decision, "default", "en_GB", False, True, 0, "nearby")
     
     #print desc
     
@@ -263,6 +229,7 @@ def command(message):
     global new_desc
     global cur_targ_frame
     global prev_state
+    global tts
     
     if message.data == "tutorial":
         
@@ -275,14 +242,13 @@ def command(message):
             msg = msg + "Some of these barrels are emmitting different types of radiation. "
             msg = msg + "We need to sort them for safe disposal. I am able to identify the radioactive barrels. "
             msg = msg + "But I will need you to guide me to the locations I describe using the arrow keys on your keyboard. "
-            msg = msg + "Once I am in position you can command me to move my arm into the grab position, and then activate the electomagnet to pick up the barrel. "
+            msg = msg + "Once I am in position you can command me to move my arm into the grab position, and then activate the electromagnet to pick up the barrel. "
             msg = msg + "We will then need to bring it back to the starting point for later disposal. "
             msg = msg + "Let's get started!"
 
             #msg = "\RSPD=90\ \VCT=100\ " + msg
 
-            tts.say(msg)
-            tts.runAndWait()
+            say(msg)
         
         create_log()
         
@@ -349,8 +315,7 @@ def command(message):
         #msg = "\VCT=" + str(vct_val) + "\ " + msg 
         
         if cond1 != "R":
-            tts.say(msg)
-            tts.runAndWait()
+            say(msg)
         
         if cur_targ < 6:
             state = prev_state
@@ -392,8 +357,7 @@ def command(message):
         if int(order) == 0 or int(order) == 1:
             set_condition(message)
         else:
-            tts.say("I am afraid I can't do that Dave")
-            tts.runAndWait()
+            say("I am afraid I can't do that Dave")
 
 if __name__ == "__main__":
     global state
@@ -544,7 +508,8 @@ if __name__ == "__main__":
     print("Boot complete, awaiting commands")
 
     while not rospy.is_shutdown():
-                
+        
+        msg_add = ''        
         
         if state != "wait":
             
@@ -724,29 +689,32 @@ if __name__ == "__main__":
                             elif req_change_yaw < -0.2:
                                 d_desc = "turn right"
                             else:
-                                d_desc = "go forward"
+                                #check we haven't got the target between the grab position and the base.
+                                if abs(math.atan2(target_y - cur_y, target_x - cur_x)) > math.pi/2:
+                                    d_desc = "go backward"
+                                else:
+                                    d_desc = "go forward"
+                            
+                            if abs(req_change_yaw) > 2.749:
+                                msg_add = " about 180 degrees"
+                            elif abs(req_change_yaw) > 2.051:
+                                msg_add = " about 135 degrees"
+                            elif abs(req_change_yaw) > 1.178
+                                msg_add = " about 90 degrees"
+                                
                         else:
-                            d_desc = d_description(cur_obj_id, final_dec, numpy.array([cur_x, cur_y, cur_z]))
+                            d_desc = d_description(target[cur_map][cur_targ], final_dec)
                         
                         if (final_dec == "elaborate" or final_dec == "navigate") and d_desc == prev_desc and time_since_last < 5:
                             pass
                         else:
                             
-                            #targetpose = PoseStamped()        
-                            #targetpose.header.frame_id = str(cur_map + 1) + "_" + str(cur_targ + 1) + "_target"
-                            #targetpose.header.stamp = rospy.Time(0)
-        
-                            #look_at(targetpose)
+                            msg = d_desc + msg_add
                             
-                            #vct_val = 90 + random.randint(0,20)
-                            #msg = "\VCT=" + str(vct_val) + "\ " + d_desc 
-                            
-                            #pub_rob_start.publish()
                             #pub_rob_desc.publish(str(msg) + " - " + str(rospy.Time.now()))
                             write_log("Tiago Starts Speaking")
                             write_log(msg)
-                            tts.say(msg)
-                            tts.runAndWait()
+                            say(msg)
                             write_log("Tiago Stops Speaking")
                             
                             #pub_rob_end.publish()
