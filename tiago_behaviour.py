@@ -58,7 +58,7 @@ iteration = 0
 full_desc = ""
 logpath = ""
 
-tts = pyttsx.init()
+#tts = pyttsx.init()
 
 #tts.say('Good morning.')
 #tts.runAndWait()
@@ -66,12 +66,21 @@ tts = pyttsx.init()
 
 target_change = False
 
-def say(msg):
+def say(msg, pub_msg = True):
     
-    global tts
+    #global tts
     
     tts = pyttsx.init()
     tts.setProperty('rate', 125)
+    if pub_msg == True:
+        pub_speech.publish(str(msg))
+    
+    #Doesn't seem to work properly but at least for some reason seems to stop the whole thing from crashing horrifically.    
+    try:
+        tts.stop()
+    except Exception as e:
+        print e
+        
     tts.say(msg)
     a = tts.runAndWait()
     
@@ -229,7 +238,7 @@ def command(message):
     global new_desc
     global cur_targ_frame
     global prev_state
-    global tts
+    #global tts
     
     if message.data == "tutorial":
         
@@ -248,7 +257,7 @@ def command(message):
 
             #msg = "\RSPD=90\ \VCT=100\ " + msg
 
-            say(msg)
+            say(msg, False)
         
         create_log()
         
@@ -293,10 +302,10 @@ def command(message):
             
     elif message.data == "success":
         
-        try:
-            tts.stop()
-        except Exception as e:
-            print e
+        #try:
+            #tts.stop()
+        #except Exception as e:
+            #print e
         
         write_log("Item placed " + str(cur_map + 1) + "_" + str(cur_targ + 1) + "_target")
         state = "wait"
@@ -315,7 +324,7 @@ def command(message):
         #msg = "\VCT=" + str(vct_val) + "\ " + msg 
         
         if cond1 != "R":
-            say(msg)
+            say(msg, False)
         
         if cur_targ < 6:
             state = prev_state
@@ -328,14 +337,16 @@ def command(message):
         
     elif message.data == "wait":
         
-        try:
-            tts.stop()
-        except Exception as e:
-            print e
+        #try:
+            #tts.stop()
+        #except Exception as e:
+            #print e
         
         write_log("Item picked up " + str(cur_map + 1) + "_" + str(cur_targ + 1) + "_target")
-        chatter = ["Good let's bring that one back.", "Nice work, now we need to bring it back to the start point.", "Ok we got it, bring the barrel back to the corner!"]
+        chatter = ["Good, let's bring that one back.", "Nice work, now we need to bring it back to the start point.", "Ok we got it, bring the barrel back to the corner!"]
+        msg = random.choice(chatter)
         prev_state = state
+        say(msg)
         state = "wait"
     
     elif message.data == "resume":
@@ -389,7 +400,7 @@ if __name__ == "__main__":
 
     sub_placement_start = rospy.Subscriber("tiago/place_desc/command", String, command, queue_size=1)
 
-    #pub_speech = rospy.Publisher("/speech", String, queue_size=5)
+    pub_speech = rospy.Publisher("tiago/place_desc/msg", String, queue_size=1)
     #pub_start_placement1 = rospy.Publisher("/sandtray/signals/start_placement1", Empty, queue_size=1)
     #pub_rob_start = rospy.Publisher("/sandtray/signals/rob_speech_start", Empty, queue_size=1)
     #pub_rob_end = rospy.Publisher("/sandtray/signals/rob_speech_end", Empty, queue_size=1)
@@ -699,7 +710,7 @@ if __name__ == "__main__":
                                 msg_add = " about 180 degrees"
                             elif abs(req_change_yaw) > 2.051:
                                 msg_add = " about 135 degrees"
-                            elif abs(req_change_yaw) > 1.178
+                            elif abs(req_change_yaw) > 1.178:
                                 msg_add = " about 90 degrees"
                                 
                         else:

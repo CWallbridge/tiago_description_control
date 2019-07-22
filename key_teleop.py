@@ -231,6 +231,8 @@ class SimpleKeyTeleop():
         self._interface = interface
         self._pub_cmd = rospy.Publisher('key_vel', Twist)
         self._pub_beh_cmd = rospy.Publisher('tiago/place_desc/command', String, queue_size=1)
+        
+        self._sub_say = rospy.Subscriber("tiago/place_desc/msg", String, self.updt_last_comm, queue_size=1)
 
         self._hz = rospy.get_param('~hz', 10)
 
@@ -242,6 +244,7 @@ class SimpleKeyTeleop():
         self._linear = 0
         self._arm_pos = "right"
         self._drive_mode = "normal"
+        self._last_comm = "Booted"
 
         self._move_arm('stretch')
         self._move_arm('unfold_arm')
@@ -256,6 +259,9 @@ class SimpleKeyTeleop():
         curses.KEY_LEFT:  ( 0,  1),
         curses.KEY_RIGHT: ( 0, -1),
     }
+
+    def updt_last_comm(self, msg):
+        self._last_comm = msg.data
 
     def _wait_for_valid_time(self, timeout):
         """Wait for a valid time (non-zero), this is important
@@ -402,8 +408,9 @@ class SimpleKeyTeleop():
     def _publish(self):
         self._interface.clear()
         self._interface.write_line(2, 'Linear: %f, Angular: %f, Arm Position : %s, Drive Mode : %s' % (self._linear, self._angular, self._arm_pos, self._drive_mode))
+        self._interface.write_line(3, 'Last communication: %s' % (self._last_comm))
         if self._state == 'drive':
-            self._interface.write_line(5, 'Use arrow keys to move, g to go to grab position, h to switch arm positions, q to exit.')
+            self._interface.write_line(5, 'Use arrow keys to move')
             self._interface.write_line(6, 'g to go to grab position')
             self._interface.write_line(7, 'h to switch arm positions')
             self._interface.write_line(8, 'f to switch to toggle fine position control')
