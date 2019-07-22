@@ -141,6 +141,7 @@ class CommandTeleop():
                         self._state = "End2"  
             if keycode == ord('p'):
                 self._pub_cmd.publish("resume")
+                self._state == "Describing"
             keycode = ord('a')
         
         if self._state == "End1":
