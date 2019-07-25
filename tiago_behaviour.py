@@ -253,7 +253,7 @@ def command(message):
             msg = msg + "We need to sort them for safe disposal. I am able to identify the radioactive barrels. "
             msg = msg + "But I will need you to guide me to the locations I describe using the arrow keys on your keyboard. "
             msg = msg + "Once I am in position you can command me to move my arm into the grab position, and then activate the electromagnet to pick up the barrel. "
-            msg = msg + "We will then need to bring it back to the starting point for later disposal. "
+            msg = msg + "We will then need to bring it back to the marked area for later disposal. "
             msg = msg + "Let's get started!"
 
             #msg = "\RSPD=90\ \VCT=100\ " + msg
@@ -344,7 +344,7 @@ def command(message):
             #print e
         
         write_log("Item picked up " + str(cur_map + 1) + "_" + str(cur_targ + 1) + "_target")
-        chatter = ["Good, let's bring that one back.", "Nice work, now we need to bring it back to the start point.", "Ok we got it, bring the barrel back to the corner!"]
+        chatter = ["Good, let's bring that one back.", "Nice work, now we need to bring it back to the marked area.", "Ok we got it, bring the barrel back to the marked zone!"]
         msg = random.choice(chatter)
         prev_state = state
         say(msg)
@@ -352,7 +352,7 @@ def command(message):
     
     elif message.data == "resume":
         
-        write_log("Returnin to description")
+        write_log("Returning to description")
         state = prev_state
         
     elif message.data == "grab":
