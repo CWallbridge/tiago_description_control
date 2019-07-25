@@ -71,15 +71,16 @@ def say(msg, pub_msg = True):
     #global tts
     
     tts = pyttsx.init()
-    tts.setProperty('rate', 125)
-    if pub_msg == True:
-        pub_speech.publish(str(msg))
     
     #Doesn't seem to work properly but at least for some reason seems to stop the whole thing from crashing horrifically.    
     try:
         tts.stop()
     except Exception as e:
         print e
+    
+    tts.setProperty('rate', 125)
+    if pub_msg == True:
+        pub_speech.publish(str(msg))
         
     tts.say(msg)
     a = tts.runAndWait()
@@ -667,7 +668,7 @@ if __name__ == "__main__":
                 pass
 
             
-            if state == "na_describe" and (((rospy.Time.now() - last_desc).to_sec() > 5) or (new_desc == True)):
+            if state == "na_describe" and (((rospy.Time.now() - last_desc).to_sec() > 20) or (new_desc == True)):
                 last_desc = na_description(cur_map, cur_targ)
             
             if state == "d_describe":
