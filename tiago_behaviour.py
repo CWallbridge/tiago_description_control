@@ -72,12 +72,12 @@ def say(msg, pub_msg = True):
     
     tts = pyttsx.init()
     
-    try:
-        tts.endLoop()
-        time.sleep(1)
-        tts = pyttsx.init()
-    except Exception as e:
-        print e
+    #try:
+    #    tts.endLoop()
+    #    time.sleep(1)
+    #    tts = pyttsx.init()
+    #except Exception as e:
+    #    print e
     
     #Doesn't seem to work properly but at least for some reason seems to stop the whole thing from crashing horrifically.    
     #try:
@@ -90,7 +90,15 @@ def say(msg, pub_msg = True):
         pub_speech.publish(str(msg))
         
     tts.say(msg)
-    a = tts.runAndWait()
+    
+    try:
+        a = tts.runAndWait()
+    except Exception as e:
+        time.sleep(5)
+        try:
+            a = tts.runAndWait()
+        except Exception as e:
+            print e
     
 def load_mlp_classifier(filename):
     
@@ -260,6 +268,7 @@ def command(message):
             msg = msg + "We need to sort them for safe disposal. I am able to identify the radioactive barrels. "
             msg = msg + "But I will need you to guide me to the locations I describe using the arrow keys on your keyboard. "
             msg = msg + "Once I am in position you can command me to move my arm into the grab position, and then activate the electromagnet to pick up the barrel. "
+            msg = msg + "Press the A key on the remote to toggle on and off the electro magnet. While in the grab position an L E D will let you know if the magnet is on or off. "
             msg = msg + "We will then need to bring it back to the marked area for later disposal. "
             msg = msg + "Let's get started!"
 
@@ -733,7 +742,7 @@ if __name__ == "__main__":
                         else:
                             d_desc = d_description(target[cur_map][cur_targ], final_dec)
                         
-                        if (final_dec == "elaborate" or final_dec == "navigate") and d_desc == prev_desc and time_since_last < 5:
+                        if (final_dec == "navigate" and d_desc == prev_desc and time_since_last < 5) or (final_dec == "elaborate" and d_desc == prev_desc and time_since_last < 10):
                             pass
                         else:
                             
