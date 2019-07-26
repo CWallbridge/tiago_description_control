@@ -72,11 +72,18 @@ def say(msg, pub_msg = True):
     
     tts = pyttsx.init()
     
-    #Doesn't seem to work properly but at least for some reason seems to stop the whole thing from crashing horrifically.    
     try:
-        tts.stop()
+        tts.endLoop()
+        time.sleep(1)
+        tts = pyttsx.init()
     except Exception as e:
         print e
+    
+    #Doesn't seem to work properly but at least for some reason seems to stop the whole thing from crashing horrifically.    
+    #try:
+    #    tts.stop()
+    #except Exception as e:
+    #    print e
     
     tts.setProperty('rate', 125)
     if pub_msg == True:
@@ -535,10 +542,10 @@ if __name__ == "__main__":
                 
                 target_z = 0 #We don't actually care about z in this case and it will throw off the numbers.
                 
-                if cond1 == 'R':
-                    marker_z = 0.205
-                else:
-                    marker_z = -100
+                #if cond1 == 'R':
+                marker_z = 0.205
+                #else:
+                #    marker_z = -100
                 
                 world[cur_map].scene.nodes[rad_marker_id[cur_map]].transformation = compose_matrix(scale = rad_scale, shear = rad_shear, angles = rad_angles, translate = [target_x, target_y, marker_z], perspective = rad_persp)
                 
@@ -702,7 +709,16 @@ if __name__ == "__main__":
                                 d_desc = "turn right"
                             else:
                                 #check we haven't got the target between the grab position and the base.
-                                if abs(math.atan2(target_y - cur_y, target_x - cur_x)) > math.pi/2:
+                                
+                                req_yaw_grab = math.atan2(target_y - cur_y, target_x - cur_x)
+                                if req_yaw_grab - base_yaw < -(math.pi):
+                                    req_change_yaw_grab = req_yaw_grab - base_yaw + (2*math.pi)
+                                elif req_yaw - base_yaw > math.pi:
+                                    req_change_yaw_grab = req_yaw_grab - base_yaw - (2*math.pi)
+                                else:
+                                    req_change_yaw_grab = req_yaw_grab - base_yaw
+            
+                                if abs(req_change_yaw_grab) > math.pi/2:
                                     d_desc = "go backward"
                                 else:
                                     d_desc = "go forward"
